@@ -1,7 +1,8 @@
 import { type FormEvent, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 export default function LoginPage() {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(true)
@@ -21,6 +22,7 @@ export default function LoginPage() {
     window.setTimeout(() => {
       setLoading(false)
       console.info('Login (demo)', { email: email.trim(), remember })
+      navigate('/boas-vindas')
     }, 650)
   }
 

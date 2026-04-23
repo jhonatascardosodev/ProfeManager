@@ -1,7 +1,9 @@
 .login-page {
-  min-height: 100dvh;
+  min-height: calc(100dvh - 2rem);
   display: grid;
-  grid-template-columns: minmax(400px, 1fr) minmax(400px, 480px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(1120px, calc(100% - 2rem));
+  margin: 1rem auto;
 }
 
 .login-aside {
@@ -9,7 +11,8 @@
   padding: 3rem 3.5rem;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: center;
+  align-items: center;
   overflow: hidden;
   background:
     radial-gradient(ellipse 100% 90% at 15% 10%, rgba(255, 255, 255, 0.2), transparent 50%),
@@ -28,6 +31,7 @@
 .brand {
   position: relative;
   z-index: 1;
+  text-align: center;
 }
 
 .brand-mark {
@@ -49,9 +53,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 3rem 3rem 3rem 2rem;
+  padding: 3rem;
   background: var(--bg);
   overflow-y: auto;
+}
+
+@media (max-width: 900px) {
+  .login-page {
+    grid-template-columns: 1fr;
+    width: min(560px, calc(100% - 1.25rem));
+    margin: 0.625rem auto;
+    min-height: calc(100dvh - 1.25rem);
+  }
 }
 
 .login-card {
@@ -217,4 +230,157 @@ a.link-muted {
 
 .login-footer a:hover {
   text-decoration: underline;
+}
+
+.welcome-card {
+  max-width: 560px;
+}
+
+.planner-card {
+  max-width: 760px;
+}
+
+.service-hub-card {
+  max-width: 760px;
+}
+
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.service-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.9rem;
+  background: #f8fbff;
+  text-decoration: none;
+  color: inherit;
+}
+
+.service-card strong {
+  display: block;
+  margin: 0.15rem 0 0.35rem;
+  color: var(--text-heading);
+}
+
+.service-card p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.service-card--active {
+  border-color: rgba(29, 78, 216, 0.35);
+  box-shadow: 0 6px 16px rgba(29, 78, 216, 0.12);
+}
+
+.service-card--active:hover {
+  transform: translateY(-1px);
+}
+
+.service-card--soon {
+  opacity: 0.88;
+}
+
+.service-icon {
+  display: inline-flex;
+  width: 1.85rem;
+  height: 1.85rem;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  border-radius: 8px;
+  background: #e8f0ff;
+}
+
+.planner-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin-bottom: 1.2rem;
+}
+
+.select-field {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  font: inherit;
+  font-size: 0.9375rem;
+  color: var(--text-heading);
+  background: #ffffff;
+  border: 1px solid rgba(30, 64, 175, 0.18);
+  border-radius: 10px;
+  outline: none;
+}
+
+.select-field:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-muted);
+}
+
+.welcome-section + .welcome-section {
+  margin-top: 1.25rem;
+}
+
+.welcome-section h2 {
+  margin: 0 0 0.55rem;
+  font-size: 1rem;
+  color: var(--text-heading);
+}
+
+.feature-list,
+.step-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--text);
+}
+
+.feature-list li,
+.step-list li {
+  margin-bottom: 0.45rem;
+  line-height: 1.4;
+}
+
+.seat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.7rem;
+}
+
+.seat-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  background: #f8fbff;
+}
+
+.seat-card strong {
+  display: block;
+  font-size: 0.92rem;
+  color: var(--text-heading);
+}
+
+.seat-number {
+  margin: 0 0 0.2rem;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.seat-tag {
+  display: inline-flex;
+  margin-top: 0.35rem;
+  font-size: 0.72rem;
+  padding: 0.18rem 0.45rem;
+  border-radius: 999px;
+  color: var(--accent-hover);
+  background: #e8f0ff;
+}
+
+@media (max-width: 900px) {
+  .service-grid,
+  .planner-controls {
+    grid-template-columns: 1fr;
+  }
 }
