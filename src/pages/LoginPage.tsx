@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import logo from '../Profm.png'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -28,6 +29,7 @@ export default function LoginPage() {
 
   return (
     <div className="login-card">
+      <img className="login-logo" src={logo} alt="Logo PROFM" />
       <h1>Entrar</h1>
       <p className="login-sub">Digite suas credenciais para continuar.</p>
 
