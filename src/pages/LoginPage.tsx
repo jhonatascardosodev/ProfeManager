@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import logo from '../Profm.png'
+import { nameFromEmail, setUser } from '../lib/session'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -22,14 +22,18 @@ export default function LoginPage() {
     setLoading(true)
     window.setTimeout(() => {
       setLoading(false)
-      console.info('Login (demo)', { email: email.trim(), remember })
+      const trimmedEmail = email.trim()
+      setUser({
+        name: nameFromEmail(trimmedEmail),
+        email: trimmedEmail,
+      })
+      console.info('Login (demo)', { email: trimmedEmail, remember })
       navigate('/boas-vindas')
     }, 650)
   }
 
   return (
     <div className="login-card">
-      <img className="login-logo" src={logo} alt="Logo PROFM" />
       <h1>Entrar</h1>
       <p className="login-sub">Digite suas credenciais para continuar.</p>
 

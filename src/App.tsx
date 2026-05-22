@@ -1,6 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import AuthShell from './components/AuthShell'
 import ClassroomMapPage from './pages/ClassroomMapPage'
+import GradesPage from './pages/GradesPage'
+import LessonPlanPage from './pages/LessonPlanPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import LoginPage from './pages/LoginPage'
 import SignUpPage from './pages/SignUpPage'
@@ -18,6 +20,8 @@ export default function App() {
           <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
           <Route path="/boas-vindas" element={<WelcomePage />} />
           <Route path="/mapa-sala" element={<ClassroomMapPage />} />
+          <Route path="/planejamento-aula" element={<LessonPlanPage />} />
+          <Route path="/notas-desempenho" element={<GradesPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/entrar" replace />} />
       </Routes>

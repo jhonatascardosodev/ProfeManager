@@ -1,8 +1,20 @@
 import { Link } from 'react-router-dom'
+import { clearUser, getUser } from '../lib/session'
 
 export default function WelcomePage() {
+  const user = getUser()
+  const teacherName = user?.name ?? 'Professor'
+
+  function handleLogout() {
+    clearUser()
+  }
+
   return (
     <div className="login-card service-hub-card">
+      <p className="welcome-banner">
+        Seja bem-vindo, professor <strong>{teacherName}</strong>!
+      </p>
+
       <h1>Painel de Serviços</h1>
       <p className="login-sub">
         Escolha um módulo do ProfeManager para continuar.
@@ -17,21 +29,21 @@ export default function WelcomePage() {
           <p>Defina matéria, quantidade de alunos e regras de assento.</p>
         </Link>
 
-        <article className="service-card service-card--soon">
+        <Link className="service-card service-card--active" to="/notas-desempenho">
           <span className="service-icon" aria-hidden>
             📊
           </span>
           <strong>Notas e Desempenho</strong>
           <p>Lançamento de notas e acompanhamento da evolução da turma.</p>
-        </article>
+        </Link>
 
-        <article className="service-card service-card--soon">
+        <Link className="service-card service-card--active" to="/planejamento-aula">
           <span className="service-icon" aria-hidden>
             📅
           </span>
-          <strong>Planejamento</strong>
-          <p>Agenda de aulas, atividades e cronograma semanal.</p>
-        </article>
+          <strong>Planejamento de Aula</strong>
+          <p>Assunto, livros, materiais, atividades e avaliação.</p>
+        </Link>
 
         <article className="service-card service-card--soon">
           <span className="service-icon" aria-hidden>
@@ -43,7 +55,9 @@ export default function WelcomePage() {
       </section>
 
       <p className="login-footer">
-        <Link to="/entrar">Sair</Link>
+        <Link to="/entrar" onClick={handleLogout}>
+          Sair
+        </Link>
       </p>
     </div>
   )

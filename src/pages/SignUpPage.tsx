@@ -1,7 +1,9 @@
 import { type FormEvent, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { setUser } from '../lib/session'
 
 export default function SignUpPage() {
+  const navigate = useNavigate()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -32,7 +34,10 @@ export default function SignUpPage() {
     setLoading(true)
     window.setTimeout(() => {
       setLoading(false)
-      console.info('Cadastro (demo)', { name: n, email: email.trim() })
+      const trimmedEmail = email.trim()
+      setUser({ name: n, email: trimmedEmail })
+      console.info('Cadastro (demo)', { name: n, email: trimmedEmail })
+      navigate('/boas-vindas')
     }, 650)
   }
 

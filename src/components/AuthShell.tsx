@@ -1,5 +1,5 @@
 import { Link, Outlet } from 'react-router-dom'
-import logo from '../Profmlogo-transparent.png'
+import { logoProfmBrand } from '../assets'
 
 export default function AuthShell() {
   return (
@@ -7,7 +7,7 @@ export default function AuthShell() {
       <aside className="login-aside" aria-label="Apresentação da marca">
         <div className="brand">
           <Link className="brand-mark" to="/entrar">
-            <img className="brand-logo" src={logo} alt="Logo PROFMLOGO" />
+            <img className="brand-logo" src={logoProfmBrand} alt="Logo PROFM" />
           </Link>
         </div>
       </aside>
