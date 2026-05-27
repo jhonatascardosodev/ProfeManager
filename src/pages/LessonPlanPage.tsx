@@ -1,32 +1,21 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ApiError, createLessonPlan, deleteLessonPlan, listLessonPlans, updateLessonPlan } from '../lib/api'
+import { lessonPlanFromApi, lessonPlanToApi } from '../lib/mappers'
 import { EMPTY_LESSON_PLAN, type LessonPlan } from '../types/lessonPlan'
-
-const STORAGE_KEY = 'profemanager:lesson-plans'
-
-function loadPlans(): LessonPlan[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw) as LessonPlan[]
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-function savePlans(plans: LessonPlan[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(plans))
-}
 
 export default function LessonPlanPage() {
   const [form, setForm] = useState(EMPTY_LESSON_PLAN)
   const [plans, setPlans] = useState<LessonPlan[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    setPlans(loadPlans())
+    listLessonPlans()
+      .then((items) => setPlans(items.map(lessonPlanFromApi)))
+      .catch(() => setPlans([]))
   }, [])
 
   function updateField<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
@@ -38,30 +27,36 @@ export default function LessonPlanPage() {
     setEditingId(null)
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    setError(null)
 
     if (!form.subject.trim() || !form.topic.trim()) {
-      setMessage('Preencha pelo menos a disciplina e o assunto da aula.')
+      setMessage(null)
+      setError('Preencha pelo menos a disciplina e o assunto da aula.')
       return
     }
 
-    const payload: LessonPlan = {
-      ...form,
-      id: editingId ?? crypto.randomUUID(),
-      createdAt: editingId
-        ? (plans.find((p) => p.id === editingId)?.createdAt ?? new Date().toISOString())
-        : new Date().toISOString(),
+    setLoading(true)
+    try {
+      const payload = lessonPlanToApi(form)
+      if (editingId) {
+        const updated = await updateLessonPlan(Number(editingId), payload)
+        const mapped = lessonPlanFromApi(updated)
+        setPlans((prev) => prev.map((p) => (p.id === editingId ? mapped : p)))
+        setMessage('Planejamento atualizado.')
+      } else {
+        const created = await createLessonPlan(payload)
+        const mapped = lessonPlanFromApi(created)
+        setPlans((prev) => [mapped, ...prev])
+        setMessage('Planejamento salvo com sucesso.')
+      }
+      resetForm()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Não foi possível salvar o planejamento.')
+    } finally {
+      setLoading(false)
     }
-
-    const next = editingId
-      ? plans.map((p) => (p.id === editingId ? payload : p))
-      : [payload, ...plans]
-
-    setPlans(next)
-    savePlans(next)
-    setMessage(editingId ? 'Planejamento atualizado.' : 'Planejamento salvo com sucesso.')
-    resetForm()
   }
 
   function handleEdit(plan: LessonPlan) {
@@ -80,15 +75,23 @@ export default function LessonPlanPage() {
     })
     setEditingId(plan.id)
     setMessage(null)
+    setError(null)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  function handleDelete(id: string) {
-    const next = plans.filter((p) => p.id !== id)
-    setPlans(next)
-    savePlans(next)
-    if (editingId === id) resetForm()
-    setMessage('Planejamento removido.')
+  async function handleDelete(id: string) {
+    setLoading(true)
+    setError(null)
+    try {
+      await deleteLessonPlan(Number(id))
+      setPlans((prev) => prev.filter((p) => p.id !== id))
+      if (editingId === id) resetForm()
+      setMessage('Planejamento removido.')
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Não foi possível remover o planejamento.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -101,6 +104,11 @@ export default function LessonPlanPage() {
       {message ? (
         <p className="form-success" role="status">
           {message}
+        </p>
+      ) : null}
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
         </p>
       ) : null}
 
@@ -244,11 +252,11 @@ export default function LessonPlanPage() {
         </section>
 
         <div className="lesson-plan-actions">
-          <button type="submit" className="btn-primary">
-            {editingId ? 'Atualizar planejamento' : 'Salvar planejamento'}
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Salvando…' : editingId ? 'Atualizar planejamento' : 'Salvar planejamento'}
           </button>
           {editingId ? (
-            <button type="button" className="btn-secondary" onClick={resetForm}>
+            <button type="button" className="btn-secondary" onClick={resetForm} disabled={loading}>
               Cancelar edição
             </button>
           ) : null}
@@ -279,7 +287,12 @@ export default function LessonPlanPage() {
                   <button type="button" className="btn-link" onClick={() => handleEdit(plan)}>
                     Editar
                   </button>
-                  <button type="button" className="btn-link btn-link--danger" onClick={() => handleDelete(plan.id)}>
+                  <button
+                    type="button"
+                    className="btn-link btn-link--danger"
+                    onClick={() => handleDelete(plan.id)}
+                    disabled={loading}
+                  >
                     Excluir
                   </button>
                 </div>

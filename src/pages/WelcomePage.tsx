@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom'
-import { clearUser, getUser } from '../lib/session'
+import { clearSession, getUser } from '../lib/session'
 
 export default function WelcomePage() {
   const user = getUser()
   const teacherName = user?.name ?? 'Professor'
 
   function handleLogout() {
-    clearUser()
+    clearSession()
   }
 
   return (

@@ -10,6 +10,15 @@
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
 }
 
+.login-page--solo {
+  grid-template-columns: 1fr;
+  width: min(1200px, calc(100% - 2rem));
+}
+
+.login-page--solo .login-main {
+  padding: 2.5rem 2rem;
+}
+
 .login-aside {
   position: relative;
   padding: 3.5rem 3rem;
@@ -92,10 +101,17 @@
 
 .login-card h1 {
   margin: 0 0 0.25rem;
-  font-size: 1.65rem;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 800;
   color: var(--text-heading);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+
+.login-card h1.title-centered {
+  margin-bottom: 1.5rem;
+  text-align: center;
 }
 
 .login-sub {
@@ -655,8 +671,11 @@ a.link-muted {
 
 .welcome-section h2 {
   margin: 0 0 0.55rem;
-  font-size: 1rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
   color: var(--text-heading);
+  letter-spacing: -0.015em;
 }
 
 .feature-list,

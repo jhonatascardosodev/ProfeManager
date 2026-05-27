@@ -25,6 +25,11 @@ export function clearUser() {
   localStorage.removeItem(USER_KEY)
 }
 
+export function clearSession() {
+  clearUser()
+  localStorage.removeItem('profemanager:token')
+}
+
 export function nameFromEmail(email: string): string {
   const local = email.split('@')[0]?.replace(/[._-]+/g, ' ').trim() ?? ''
   if (!local) return 'Professor'

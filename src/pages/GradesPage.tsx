@@ -1,5 +1,7 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ApiError, createGrade, deleteGrade, listGrades, updateGrade } from '../lib/api'
+import { gradeFromApi, gradeToApi } from '../lib/mappers'
 import {
   calculateAverage,
   EMPTY_STUDENT_GRADE,
@@ -7,23 +9,6 @@ import {
   STATUS_LABELS,
   type StudentGrade,
 } from '../types/grade'
-
-const STORAGE_KEY = 'profemanager:grades'
-
-function loadGrades(): StudentGrade[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw) as StudentGrade[]
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-function saveGrades(entries: StudentGrade[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
-}
 
 function parseScore(value: string): number | null {
   if (!value.trim()) return null
@@ -37,11 +22,22 @@ export default function GradesPage() {
   const [entries, setEntries] = useState<StudentGrade[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
   const [filterSubject, setFilterSubject] = useState('')
   const [filterClass, setFilterClass] = useState('')
 
+  async function loadEntries(subject?: string) {
+    try {
+      const items = await listGrades(subject || undefined)
+      setEntries(items.map(gradeFromApi))
+    } catch {
+      setEntries([])
+    }
+  }
+
   useEffect(() => {
-    setEntries(loadGrades())
+    loadEntries()
   }, [])
 
   const filtered = useMemo(() => {
@@ -101,30 +97,36 @@ export default function GradesPage() {
     setEditingId(null)
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    setError(null)
 
     if (!form.studentName.trim() || !form.subject.trim()) {
-      setMessage('Preencha o nome do aluno e a disciplina.')
+      setMessage(null)
+      setError('Preencha o nome do aluno e a disciplina.')
       return
     }
 
-    const payload: StudentGrade = {
-      ...form,
-      id: editingId ?? crypto.randomUUID(),
-      createdAt: editingId
-        ? (entries.find((item) => item.id === editingId)?.createdAt ?? new Date().toISOString())
-        : new Date().toISOString(),
+    setLoading(true)
+    try {
+      const payload = gradeToApi(form)
+      if (editingId) {
+        const updated = await updateGrade(Number(editingId), payload)
+        const mapped = gradeFromApi(updated)
+        setEntries((prev) => prev.map((item) => (item.id === editingId ? mapped : item)))
+        setMessage('Notas atualizadas.')
+      } else {
+        const created = await createGrade(payload)
+        const mapped = gradeFromApi(created)
+        setEntries((prev) => [mapped, ...prev])
+        setMessage('Notas lançadas com sucesso.')
+      }
+      resetForm()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Não foi possível salvar as notas.')
+    } finally {
+      setLoading(false)
     }
-
-    const next = editingId
-      ? entries.map((item) => (item.id === editingId ? payload : item))
-      : [payload, ...entries]
-
-    setEntries(next)
-    saveGrades(next)
-    setMessage(editingId ? 'Notas atualizadas.' : 'Notas lançadas com sucesso.')
-    resetForm()
   }
 
   function handleEdit(entry: StudentGrade) {
@@ -141,15 +143,23 @@ export default function GradesPage() {
     })
     setEditingId(entry.id)
     setMessage(null)
+    setError(null)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  function handleDelete(id: string) {
-    const next = entries.filter((item) => item.id !== id)
-    setEntries(next)
-    saveGrades(next)
-    if (editingId === id) resetForm()
-    setMessage('Registro removido.')
+  async function handleDelete(id: string) {
+    setLoading(true)
+    setError(null)
+    try {
+      await deleteGrade(Number(id))
+      setEntries((prev) => prev.filter((item) => item.id !== id))
+      if (editingId === id) resetForm()
+      setMessage('Registro removido.')
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Não foi possível remover o registro.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -162,6 +172,11 @@ export default function GradesPage() {
       {message ? (
         <p className="form-success" role="status">
           {message}
+        </p>
+      ) : null}
+      {error ? (
+        <p className="form-error" role="alert">
+          {error}
         </p>
       ) : null}
 
@@ -265,11 +280,11 @@ export default function GradesPage() {
         </section>
 
         <div className="lesson-plan-actions">
-          <button type="submit" className="btn-primary">
-            {editingId ? 'Atualizar notas' : 'Salvar notas'}
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? 'Salvando…' : editingId ? 'Atualizar notas' : 'Salvar notas'}
           </button>
           {editingId ? (
-            <button type="button" className="btn-secondary" onClick={resetForm}>
+            <button type="button" className="btn-secondary" onClick={resetForm} disabled={loading}>
               Cancelar edição
             </button>
           ) : null}
@@ -359,6 +374,7 @@ export default function GradesPage() {
                             type="button"
                             className="btn-link btn-link--danger"
                             onClick={() => handleDelete(entry.id)}
+                            disabled={loading}
                           >
                             Excluir
                           </button>

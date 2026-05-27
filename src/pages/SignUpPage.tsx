@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { ApiError, setToken, signup } from '../lib/api'
 import { setUser } from '../lib/session'
 
 export default function SignUpPage() {
@@ -11,7 +12,7 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
 
@@ -32,13 +33,16 @@ export default function SignUpPage() {
     }
 
     setLoading(true)
-    window.setTimeout(() => {
-      setLoading(false)
-      const trimmedEmail = email.trim()
-      setUser({ name: n, email: trimmedEmail })
-      console.info('Cadastro (demo)', { name: n, email: trimmedEmail })
+    try {
+      const result = await signup(n, email.trim(), password)
+      setToken(result.access_token)
+      setUser({ name: result.user.name, email: result.user.email })
       navigate('/boas-vindas')
-    }, 650)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Não foi possível criar a conta.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

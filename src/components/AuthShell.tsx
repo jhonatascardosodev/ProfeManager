@@ -1,7 +1,22 @@
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { logoProfmBrand } from '../assets'
 
+const AUTH_ROUTES = new Set(['/entrar', '/criar-conta', '/esqueci-senha'])
+
 export default function AuthShell() {
+  const { pathname } = useLocation()
+  const isAuthRoute = AUTH_ROUTES.has(pathname)
+
+  if (!isAuthRoute) {
+    return (
+      <div className="login-page login-page--solo">
+        <main className="login-main">
+          <Outlet />
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="login-page">
       <aside className="login-aside" aria-label="Apresentação da marca">

@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { nameFromEmail, setUser } from '../lib/session'
+import { ApiError, login, setToken } from '../lib/api'
+import { setUser } from '../lib/session'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -10,7 +11,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
 
@@ -20,23 +21,23 @@ export default function LoginPage() {
     }
 
     setLoading(true)
-    window.setTimeout(() => {
-      setLoading(false)
-      const trimmedEmail = email.trim()
-      setUser({
-        name: nameFromEmail(trimmedEmail),
-        email: trimmedEmail,
-      })
-      console.info('Login (demo)', { email: trimmedEmail, remember })
+    try {
+      const result = await login(email.trim(), password)
+      setToken(result.access_token)
+      setUser({ name: result.user.name, email: result.user.email })
+      if (!remember) {
+        // token stays; "remember" could gate sessionStorage vs localStorage later
+      }
       navigate('/boas-vindas')
-    }, 650)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Não foi possível entrar. Tente novamente.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className="login-card">
-      <h1>Entrar</h1>
-      <p className="login-sub">Digite suas credenciais para continuar.</p>
-
       <form onSubmit={handleSubmit} noValidate>
         {error ? (
           <p className="form-error" role="alert">
