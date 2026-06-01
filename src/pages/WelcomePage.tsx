@@ -1,12 +1,14 @@
-import { Link } from 'react-router-dom'
-import { clearSession, getUser } from '../lib/session'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 export default function WelcomePage() {
-  const user = getUser()
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
   const teacherName = user?.name ?? 'Professor'
 
   function handleLogout() {
-    clearSession()
+    logout()
+    navigate('/entrar', { replace: true })
   }
 
   return (

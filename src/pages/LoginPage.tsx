@@ -1,10 +1,12 @@
 import { type FormEvent, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { ApiError, login, setToken } from '../lib/api'
-import { setUser } from '../lib/session'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { ApiError, login } from '../lib/api'
+import { useAuth } from '../context/AuthContext'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { login: authLogin } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(true)
@@ -23,12 +25,13 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const result = await login(email.trim(), password)
-      setToken(result.access_token)
-      setUser({ name: result.user.name, email: result.user.email })
+      authLogin(result.access_token, { name: result.user.name, email: result.user.email })
       if (!remember) {
         // token stays; "remember" could gate sessionStorage vs localStorage later
       }
-      navigate('/boas-vindas')
+      const redirectTo =
+        (location.state as { from?: string } | null)?.from ?? '/boas-vindas'
+      navigate(redirectTo, { replace: true })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível entrar. Tente novamente.')
     } finally {

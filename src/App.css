@@ -1,3 +1,12 @@
+.auth-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 12rem;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
 .login-page {
   min-height: calc(100dvh - 1.5rem);
   display: grid;

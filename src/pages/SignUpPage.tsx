@@ -1,10 +1,11 @@
 import { type FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ApiError, setToken, signup } from '../lib/api'
-import { setUser } from '../lib/session'
+import { ApiError, signup } from '../lib/api'
+import { useAuth } from '../context/AuthContext'
 
 export default function SignUpPage() {
   const navigate = useNavigate()
+  const { login: authLogin } = useAuth()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -35,9 +36,8 @@ export default function SignUpPage() {
     setLoading(true)
     try {
       const result = await signup(n, email.trim(), password)
-      setToken(result.access_token)
-      setUser({ name: result.user.name, email: result.user.email })
-      navigate('/boas-vindas')
+      authLogin(result.access_token, { name: result.user.name, email: result.user.email })
+      navigate('/boas-vindas', { replace: true })
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível criar a conta.')
     } finally {
