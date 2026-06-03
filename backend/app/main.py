@@ -86,6 +86,8 @@ def root() -> dict[str, str | list[str]]:
             "/api/auth/signup",
             "/api/auth/login",
             "/api/auth/me",
+            "/api/auth/forgot-password",
+            "/api/auth/reset-password",
             "/api/classrooms",
             "/api/lesson-plans",
             "/api/grades",

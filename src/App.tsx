@@ -8,6 +8,7 @@ import GradesPage from './pages/GradesPage'
 import LessonPlanPage from './pages/LessonPlanPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import LoginPage from './pages/LoginPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import SignUpPage from './pages/SignUpPage'
 import WelcomePage from './pages/WelcomePage'
 import './App.css'
@@ -24,6 +25,7 @@ export default function App() {
               <Route path="/entrar" element={<LoginPage />} />
               <Route path="/criar-conta" element={<SignUpPage />} />
               <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
+              <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
             </Route>
 
             <Route element={<ProtectedRoute />}>

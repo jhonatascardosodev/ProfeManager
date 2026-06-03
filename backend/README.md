@@ -62,6 +62,8 @@ A API sobe em `http://127.0.0.1:8000`.
 | POST   | `/api/auth/signup`    | Criar conta — retorna token + usuário     |
 | POST   | `/api/auth/login`     | Login — retorna token + usuário           |
 | GET    | `/api/auth/me`        | Dados do usuário autenticado              |
+| POST   | `/api/auth/forgot-password` | Solicitar redefinição de senha      |
+| POST   | `/api/auth/reset-password`  | Redefinir senha com token do link   |
 
 ### Mapa de Sala (`/api/classrooms`) — requer token
 

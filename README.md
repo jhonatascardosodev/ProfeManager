@@ -203,7 +203,8 @@ projetos 2026/
 | `/` | Redireciona para login |
 | `/entrar` | Login |
 | `/criar-conta` | Cadastro |
-| `/esqueci-senha` | Recuperação de senha |
+| `/esqueci-senha` | Solicitar link de redefinição |
+| `/redefinir-senha?token=...` | Definir nova senha |
 | `/boas-vindas` | Painel de serviços |
 | `/mapa-sala` | Mapa de sala |
 | `/planejamento-aula` | Planejamento de aula |

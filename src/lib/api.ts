@@ -126,6 +126,22 @@ export function fetchMe() {
   return apiRequest<ApiUser>('/api/auth/me')
 }
 
+export function forgotPassword(email: string) {
+  return apiRequest<{ message: string; reset_link?: string | null }>('/api/auth/forgot-password', {
+    method: 'POST',
+    body: { email },
+    auth: false,
+  })
+}
+
+export function resetPassword(token: string, password: string) {
+  return apiRequest<{ message: string }>('/api/auth/reset-password', {
+    method: 'POST',
+    body: { token, password },
+    auth: false,
+  })
+}
+
 // --- Classrooms ---
 
 export type ApiSeat = {

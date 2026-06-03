@@ -1,15 +1,19 @@
 import { type FormEvent, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { ApiError, forgotPassword } from '../lib/api'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [sent, setSent] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+  const [devResetLink, setDevResetLink] = useState<string | null>(null)
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
+    setMessage(null)
+    setDevResetLink(null)
 
     if (!email.trim()) {
       setError('Informe seu e-mail.')
@@ -17,26 +21,48 @@ export default function ForgotPasswordPage() {
     }
 
     setLoading(true)
-    window.setTimeout(() => {
+    try {
+      const result = await forgotPassword(email.trim())
+      setMessage(result.message)
+      if (result.reset_link) {
+        setDevResetLink(result.reset_link)
+      }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Não foi possível enviar o pedido.')
+    } finally {
       setLoading(false)
-      setSent(true)
-      console.info('Recuperação de senha (demo)', { email: email.trim() })
-    }, 650)
+    }
   }
+
+  const sent = Boolean(message)
 
   return (
     <div className="login-card">
       <h1>Esqueci a senha</h1>
       <p className="login-sub">
         {sent
-          ? 'Se existir uma conta com esse e-mail, você receberá instruções em instantes.'
+          ? message
           : 'Informe seu e-mail para receber o link de redefinição.'}
       </p>
 
       {sent ? (
-        <p className="login-footer" style={{ marginTop: 0, paddingTop: 0, borderTop: 'none' }}>
-          <Link to="/entrar">Voltar para entrar</Link>
-        </p>
+        <>
+          {devResetLink ? (
+            <p className="form-success" role="status">
+              Modo desenvolvimento: use o link abaixo para redefinir a senha.
+              <br />
+              <Link
+                className="link-muted"
+                to={`/redefinir-senha?token=${new URL(devResetLink).searchParams.get('token') ?? ''}`}
+              >
+                Abrir página de redefinição
+              </Link>
+            </p>
+          ) : null}
+          <p className="login-footer" style={{ marginTop: 0, paddingTop: 0, borderTop: 'none' }}>
+            <Link to="/entrar">Voltar para entrar</Link>
+          </p>
+        </>
       ) : (
         <form onSubmit={handleSubmit} noValidate>
           {error ? (

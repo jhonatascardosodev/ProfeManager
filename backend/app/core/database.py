@@ -13,7 +13,7 @@ def init_db() -> None:
     """Create all tables. Import models so SQLModel registers them in metadata."""
 
     from app.core.migrations import run_migrations
-    from app.models import classroom, grade, lesson_plan, user  # noqa: F401
+    from app.models import classroom, grade, lesson_plan, password_reset, user  # noqa: F401
 
     SQLModel.metadata.create_all(engine)
     run_migrations()

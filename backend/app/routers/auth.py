@@ -2,8 +2,17 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.core.deps import CurrentUser, SessionDep
 from app.core.security import create_access_token
-from app.schemas.auth import LoginRequest, SignUpRequest, TokenResponse, UserPublic
-from app.services import user_service
+from app.schemas.auth import (
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
+    LoginRequest,
+    ResetPasswordRequest,
+    ResetPasswordResponse,
+    SignUpRequest,
+    TokenResponse,
+    UserPublic,
+)
+from app.services import password_reset_service, user_service
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -37,3 +46,18 @@ def login(payload: LoginRequest, session: SessionDep) -> TokenResponse:
 @router.get("/me", response_model=UserPublic)
 def me(current_user: CurrentUser) -> UserPublic:
     return UserPublic.model_validate(current_user, from_attributes=True)
+
+
+@router.post("/forgot-password", response_model=ForgotPasswordResponse)
+def forgot_password(payload: ForgotPasswordRequest, session: SessionDep) -> ForgotPasswordResponse:
+    message, reset_link = password_reset_service.request_reset(session, payload.email)
+    return ForgotPasswordResponse(message=message, reset_link=reset_link)
+
+
+@router.post("/reset-password", response_model=ResetPasswordResponse)
+def reset_password(payload: ResetPasswordRequest, session: SessionDep) -> ResetPasswordResponse:
+    try:
+        password_reset_service.reset_password(session, payload.token, payload.password)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    return ResetPasswordResponse(message="Senha redefinida com sucesso. Você já pode entrar.")
