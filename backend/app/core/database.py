@@ -12,9 +12,11 @@ engine = create_engine(settings.database_url, echo=False, connect_args=connect_a
 def init_db() -> None:
     """Create all tables. Import models so SQLModel registers them in metadata."""
 
+    from app.core.migrations import run_migrations
     from app.models import classroom, grade, lesson_plan, user  # noqa: F401
 
     SQLModel.metadata.create_all(engine)
+    run_migrations()
 
 
 def get_session() -> Generator[Session, None, None]:

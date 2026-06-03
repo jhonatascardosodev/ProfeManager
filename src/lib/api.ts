@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000'
+/** Vazio = usa proxy do Vite (/api → backend). Em produção, defina VITE_API_URL. */
+const API_BASE = import.meta.env.VITE_API_URL ?? ''
 const TOKEN_KEY = 'profemanager:token'
 
 export class ApiError extends Error {
@@ -180,12 +181,15 @@ export function deleteClassroom(id: number) {
 export type ApiLessonPlan = {
   id: number
   subject: string
+  grade_class: string
   topic: string
+  duration_minutes: number | null
   objectives: string
   materials: string
   books: string
   activities: string
   evaluation: string
+  notes: string
   scheduled_for: string | null
   created_at: string
   updated_at: string
@@ -197,12 +201,15 @@ export function listLessonPlans() {
 
 export function createLessonPlan(payload: {
   subject: string
+  grade_class?: string
   topic: string
+  duration_minutes?: number | null
   objectives?: string
   materials?: string
   books?: string
   activities?: string
   evaluation?: string
+  notes?: string
   scheduled_for?: string | null
 }) {
   return apiRequest<ApiLessonPlan>('/api/lesson-plans', { method: 'POST', body: payload })
@@ -212,12 +219,15 @@ export function updateLessonPlan(
   id: number,
   payload: Partial<{
     subject: string
+    grade_class: string
     topic: string
+    duration_minutes: number | null
     objectives: string
     materials: string
     books: string
     activities: string
     evaluation: string
+    notes: string
     scheduled_for: string | null
   }>,
 ) {
@@ -234,10 +244,12 @@ export type ApiGrade = {
   id: number
   student_name: string
   subject: string
+  grade_class: string
   score_1: number | null
   score_2: number | null
   score_3: number | null
   score_4: number | null
+  participation: number | null
   note: string
   average: number | null
   status: 'aprovado' | 'recuperacao' | 'reprovado' | 'sem-nota'
@@ -267,10 +279,12 @@ export function fetchGradeStats(subject?: string) {
 export function createGrade(payload: {
   student_name: string
   subject: string
+  grade_class?: string
   score_1?: number | null
   score_2?: number | null
   score_3?: number | null
   score_4?: number | null
+  participation?: number | null
   note?: string
 }) {
   return apiRequest<ApiGrade>('/api/grades', { method: 'POST', body: payload })
@@ -281,10 +295,12 @@ export function updateGrade(
   payload: Partial<{
     student_name: string
     subject: string
+    grade_class: string
     score_1: number | null
     score_2: number | null
     score_3: number | null
     score_4: number | null
+    participation: number | null
     note: string
   }>,
 ) {

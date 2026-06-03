@@ -23,7 +23,7 @@ O **PROFM (ProfeManager)** centraliza tarefas do dia a dia do professor em uma i
 |---|---|
 | **Público-alvo** | Professores da educação básica e média |
 | **Objetivo** | Reduzir trabalho manual em organização de turma, planejamento e notas |
-| **Estado atual** | Demonstração funcional com persistência no navegador |
+| **Estado atual** | Frontend React + API FastAPI (SQLite) com autenticação JWT |
 
 ---
 
@@ -109,25 +109,42 @@ flowchart LR
 - [Node.js](https://nodejs.org/) **18+**
 - [pnpm](https://pnpm.io/) **10+** (recomendado)
 
-### 2. Instalação e execução
+### 2. Instalação
 
 ```bash
 pnpm install
-pnpm dev
+.\.venv\Scripts\pip.exe install -r backend\requirements.txt
 ```
 
-Acesse: **http://localhost:5173/**
+Opcional: copie o ambiente do frontend:
 
-### 3. Entrar no sistema (modo demo)
+```bash
+copy .env.example .env
+```
 
-> O login atual é demonstrativo — qualquer e-mail e senha preenchidos permitem acesso.
+### 3. Rodar tudo (recomendado)
 
-| Campo | Exemplo |
-|-------|---------|
-| E-mail | `professor@exemplo.com` |
-| Senha | `123456` |
+```bash
+pnpm dev:all
+```
 
-No **cadastro**, o nome informado aparece na mensagem de boas-vindas.
+| Serviço | URL |
+|---------|-----|
+| Frontend | http://localhost:5173/ |
+| API | http://127.0.0.1:8000 |
+| Swagger | http://127.0.0.1:8000/docs |
+
+O Vite encaminha `/api` para o backend — não precisa configurar CORS manualmente em dev.
+
+**Só frontend:** `pnpm dev` (requer API já rodando em outro terminal com `pnpm dev:api`).
+
+### 4. Primeiro acesso
+
+1. Abra http://localhost:5173/criar-conta
+2. Crie usuário (senha mín. 6 caracteres)
+3. Use o painel em `/boas-vindas`
+
+Rotas internas exigem login (token JWT validado com `/api/auth/me`).
 
 ---
 
@@ -135,23 +152,26 @@ No **cadastro**, o nome informado aparece na mensagem de boas-vindas.
 
 | Comando | Descrição |
 |---------|-----------|
-| `pnpm dev` | Servidor de desenvolvimento com hot reload |
+| `pnpm dev:all` | Backend + frontend juntos |
+| `pnpm dev:api` | Só API FastAPI (porta 8000, hot reload) |
+| `pnpm dev` | Só frontend Vite (porta 5173, proxy `/api`) |
 | `pnpm build` | Build de produção |
-| `pnpm preview` | Pré-visualização do build |
+| `pnpm preview` | Pré-visualização do build (proxy `/api` na porta 4173) |
 | `pnpm lint` | Análise estática com ESLint |
 
 ---
 
-## Backend (opcional)
+## Backend (FastAPI)
 
-API simples em Python para health check e listagem de usuários:
+Documentação completa: [`backend/README.md`](backend/README.md)
 
 ```bash
-cd backend
-python app.py
+pnpm dev:api
 ```
 
-Endpoints: `/` · `/health` · `/users` — configuração em `backend/config.py`.
+Principais rotas: `/api/auth/*` · `/api/classrooms` · `/api/lesson-plans` · `/api/grades`
+
+Banco SQLite: `backend/database.db` (criado automaticamente).
 
 ---
 
@@ -191,15 +211,13 @@ projetos 2026/
 
 ---
 
-## Persistência local
+## Sessão e persistência
 
-Os dados ficam no `localStorage` do navegador:
-
-| Chave | Armazena |
-|-------|----------|
-| `profemanager:user` | Nome e e-mail do professor |
-| `profemanager:lesson-plans` | Planejamentos de aula |
-| `profemanager:grades` | Notas e registros de alunos |
+| Onde | O que |
+|------|--------|
+| `localStorage` → `profemanager:token` | JWT de autenticação |
+| `localStorage` → `profemanager:user` | Nome e e-mail (cache da sessão) |
+| `backend/database.db` | Turmas, notas, planejamentos por usuário |
 
 ---
 
@@ -211,7 +229,7 @@ Os dados ficam no `localStorage` do navegador:
 | Build | Vite 8 |
 | Rotas | React Router 7 |
 | Estilo | CSS customizado (tema roxo) |
-| API | Python `http.server` (opcional) |
+| API | FastAPI + SQLModel + SQLite + JWT |
 
 ---
 

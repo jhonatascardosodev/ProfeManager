@@ -63,7 +63,11 @@ def stats(session: Session, owner_id: int, subject: str | None = None) -> dict[s
     averages: list[float] = []
 
     for grade in grades:
-        scores = [s for s in (grade.score_1, grade.score_2, grade.score_3, grade.score_4) if s is not None]
+        scores = [
+            s
+            for s in (grade.score_1, grade.score_2, grade.score_3, grade.score_4, grade.participation)
+            if s is not None
+        ]
         if not scores:
             no_grade += 1
             continue
