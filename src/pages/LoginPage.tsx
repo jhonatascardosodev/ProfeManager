@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ApiError, login } from '../lib/api'
+import { isValidEmail, translateApiMessage } from '../lib/errors'
 import { useAuth } from '../context/AuthContext'
 
 export default function LoginPage() {
@@ -17,14 +18,21 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
 
-    if (!email.trim() || !password) {
+    const trimmedEmail = email.trim()
+
+    if (!trimmedEmail || !password) {
       setError('Preencha e-mail e senha.')
+      return
+    }
+
+    if (!isValidEmail(trimmedEmail)) {
+      setError('Informe um e-mail válido.')
       return
     }
 
     setLoading(true)
     try {
-      const result = await login(email.trim(), password)
+      const result = await login(trimmedEmail, password)
       authLogin(result.access_token, { name: result.user.name, email: result.user.email })
       if (!remember) {
         // token stays; "remember" could gate sessionStorage vs localStorage later
@@ -33,7 +41,13 @@ export default function LoginPage() {
         (location.state as { from?: string } | null)?.from ?? '/boas-vindas'
       navigate(redirectTo, { replace: true })
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Não foi possível entrar. Tente novamente.')
+      if (err instanceof ApiError) {
+        setError(err.message)
+      } else if (err instanceof TypeError) {
+        setError(translateApiMessage('Failed to fetch'))
+      } else {
+        setError('Não foi possível entrar. Tente novamente.')
+      }
     } finally {
       setLoading(false)
     }

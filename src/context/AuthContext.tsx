@@ -16,6 +16,7 @@ type AuthContextValue = {
   status: AuthStatus
   user: SessionUser | null
   login: (token: string, user: SessionUser) => void
+  updateUser: (user: SessionUser) => void
   logout: () => void
 }
 
@@ -36,6 +37,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(sessionUser)
     setUserState(sessionUser)
     setStatus('authenticated')
+  }, [])
+
+  const updateUser = useCallback((sessionUser: SessionUser) => {
+    setUser(sessionUser)
+    setUserState(sessionUser)
   }, [])
 
   useEffect(() => {
@@ -75,8 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo(
-    () => ({ status, user, login, logout }),
-    [status, user, login, logout],
+    () => ({ status, user, login, updateUser, logout }),
+    [status, user, login, updateUser, logout],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

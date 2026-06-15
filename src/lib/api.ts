@@ -1,3 +1,5 @@
+import { translateApiMessage } from './errors'
+
 /** Vazio = usa proxy do Vite (/api → backend). Em produção, defina VITE_API_URL. */
 const API_BASE = import.meta.env.VITE_API_URL ?? ''
 const TOKEN_KEY = 'profemanager:token'
@@ -84,7 +86,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
           .join(', ')
       }
     }
-    throw new ApiError(detail, response.status)
+    throw new ApiError(translateApiMessage(detail, response.status), response.status)
   }
 
   return data as T
@@ -124,6 +126,17 @@ export function signup(name: string, email: string, password: string) {
 
 export function fetchMe() {
   return apiRequest<ApiUser>('/api/auth/me')
+}
+
+export function updateProfile(payload: { name?: string; email?: string }) {
+  return apiRequest<ApiUser>('/api/auth/me', { method: 'PATCH', body: payload })
+}
+
+export function changePassword(currentPassword: string, newPassword: string) {
+  return apiRequest<{ message: string }>('/api/auth/change-password', {
+    method: 'POST',
+    body: { current_password: currentPassword, new_password: newPassword },
+  })
 }
 
 export function forgotPassword(email: string) {

@@ -1,15 +1,9 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function WelcomePage() {
-  const navigate = useNavigate()
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const teacherName = user?.name ?? 'Professor'
-
-  function handleLogout() {
-    logout()
-    navigate('/entrar', { replace: true })
-  }
 
   return (
     <div className="login-card service-hub-card">
@@ -55,12 +49,6 @@ export default function WelcomePage() {
           <p>Resumo de frequência, notas e observações por aluno.</p>
         </article>
       </section>
-
-      <p className="login-footer">
-        <Link to="/entrar" onClick={handleLogout}>
-          Sair
-        </Link>
-      </p>
     </div>
   )
 }

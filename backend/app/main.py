@@ -1,9 +1,12 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.core.config import settings
+from app.core.validation_errors import validation_error_message
 from app.core.database import init_db
 from app.routers import auth, classrooms, grades, lesson_plans
 
@@ -42,6 +45,13 @@ app.include_router(auth.router)
 app.include_router(classrooms.router)
 app.include_router(lesson_plans.router)
 app.include_router(grades.router)
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
+    messages = [validation_error_message(err) for err in exc.errors()]
+    detail = messages[0] if len(messages) == 1 else messages
+    return JSONResponse(status_code=422, content={"detail": detail})
 
 
 def custom_openapi():

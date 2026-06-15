@@ -10,6 +10,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import LoginPage from './pages/LoginPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import SignUpPage from './pages/SignUpPage'
+import ProfilePage from './pages/ProfilePage'
 import WelcomePage from './pages/WelcomePage'
 import './App.css'
 
@@ -33,6 +34,7 @@ export default function App() {
               <Route path="/mapa-sala" element={<ClassroomMapPage />} />
               <Route path="/planejamento-aula" element={<LessonPlanPage />} />
               <Route path="/notas-desempenho" element={<GradesPage />} />
+              <Route path="/perfil" element={<ProfilePage />} />
             </Route>
           </Route>
 
