@@ -1,7 +1,5 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useState,
@@ -9,18 +7,8 @@ import {
 } from 'react'
 import { ApiError, fetchMe, getToken, setToken } from '../lib/api'
 import { clearSession, setUser, type SessionUser } from '../lib/session'
+import { AuthContext, type AuthStatus } from './authStore'
 
-type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated'
-
-type AuthContextValue = {
-  status: AuthStatus
-  user: SessionUser | null
-  login: (token: string, user: SessionUser) => void
-  updateUser: (user: SessionUser) => void
-  logout: () => void
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading')
@@ -32,9 +20,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('unauthenticated')
   }, [])
 
-  const login = useCallback((token: string, sessionUser: SessionUser) => {
-    setToken(token)
-    setUser(sessionUser)
+  const login = useCallback((token: string, sessionUser: SessionUser, remember = true) => {
+    setToken(token, remember)
+    setUser(sessionUser, remember)
     setUserState(sessionUser)
     setStatus('authenticated')
   }, [])
@@ -86,12 +74,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) {
-    throw new Error('useAuth deve ser usado dentro de AuthProvider')
-  }
-  return ctx
 }

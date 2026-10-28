@@ -15,15 +15,19 @@ export class ApiError extends Error {
 }
 
 export function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY)
+  return sessionStorage.getItem(TOKEN_KEY) ?? localStorage.getItem(TOKEN_KEY)
 }
 
-export function setToken(token: string) {
-  localStorage.setItem(TOKEN_KEY, token)
+/** remember=true persiste entre sessões (localStorage); false vale só até fechar a aba. */
+export function setToken(token: string, remember = true) {
+  clearToken()
+  const storage = remember ? localStorage : sessionStorage
+  storage.setItem(TOKEN_KEY, token)
 }
 
 export function clearToken() {
   localStorage.removeItem(TOKEN_KEY)
+  sessionStorage.removeItem(TOKEN_KEY)
 }
 
 type RequestOptions = {

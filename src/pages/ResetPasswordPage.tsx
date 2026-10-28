@@ -1,46 +1,38 @@
-import { type FormEvent, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ApiError, resetPassword } from '../lib/api'
+import { resetPasswordSchema, type ResetPasswordValues } from '../lib/schemas'
+import PasswordInput from '../components/PasswordInput'
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const token = useMemo(() => searchParams.get('token')?.trim() ?? '', [searchParams])
 
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<ResetPasswordValues>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { password: '', confirmPassword: '' },
+  })
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
+  async function onSubmit(values: ResetPasswordValues) {
     setError(null)
-
-    if (!token) {
-      setError('Link inválido. Solicite uma nova redefinição de senha.')
-      return
-    }
-
-    if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres.')
-      return
-    }
-
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem.')
-      return
-    }
-
-    setLoading(true)
     try {
-      const result = await resetPassword(token, password)
+      const result = await resetPassword(token, values.password)
       setSuccess(result.message)
+      toast.success('Senha redefinida!')
       window.setTimeout(() => navigate('/entrar', { replace: true }), 2000)
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível redefinir a senha.')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -70,7 +62,7 @@ export default function ResetPasswordPage() {
           {success}
         </p>
       ) : (
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
           {error ? (
             <p className="form-error" role="alert">
               {error}
@@ -79,32 +71,38 @@ export default function ResetPasswordPage() {
 
           <div className="form-field">
             <label htmlFor="reset-password">Nova senha</label>
-            <input
+            <PasswordInput
               id="reset-password"
-              name="password"
-              type="password"
               autoComplete="new-password"
               placeholder="Mínimo 6 caracteres"
-              value={password}
-              onChange={(ev) => setPassword(ev.target.value)}
+              aria-invalid={errors.password ? true : undefined}
+              {...register('password')}
             />
+            {errors.password ? <p className="field-error">{errors.password.message}</p> : null}
           </div>
 
           <div className="form-field">
             <label htmlFor="reset-confirm">Confirmar senha</label>
-            <input
+            <PasswordInput
               id="reset-confirm"
-              name="confirmPassword"
-              type="password"
               autoComplete="new-password"
               placeholder="Repita a senha"
-              value={confirmPassword}
-              onChange={(ev) => setConfirmPassword(ev.target.value)}
+              aria-invalid={errors.confirmPassword ? true : undefined}
+              {...register('confirmPassword')}
             />
+            {errors.confirmPassword ? (
+              <p className="field-error">{errors.confirmPassword.message}</p>
+            ) : null}
           </div>
 
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Salvando…' : 'Redefinir senha'}
+          <button type="submit" className="btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="btn-spinner" size={18} aria-hidden /> Salvando…
+              </>
+            ) : (
+              'Redefinir senha'
+            )}
           </button>
         </form>
       )}

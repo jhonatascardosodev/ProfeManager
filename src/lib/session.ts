@@ -1,3 +1,5 @@
+import { clearToken } from './api'
+
 export type SessionUser = {
   name: string
   email: string
@@ -5,13 +7,18 @@ export type SessionUser = {
 
 const USER_KEY = 'profemanager:user'
 
-export function setUser(user: SessionUser) {
-  localStorage.setItem(USER_KEY, JSON.stringify(user))
+export function setUser(user: SessionUser, remember?: boolean) {
+  // Sem `remember` explícito, mantém o storage onde o usuário já está salvo.
+  const persist = remember ?? sessionStorage.getItem(USER_KEY) === null
+  localStorage.removeItem(USER_KEY)
+  sessionStorage.removeItem(USER_KEY)
+  const storage = persist ? localStorage : sessionStorage
+  storage.setItem(USER_KEY, JSON.stringify(user))
 }
 
 export function getUser(): SessionUser | null {
   try {
-    const raw = localStorage.getItem(USER_KEY)
+    const raw = sessionStorage.getItem(USER_KEY) ?? localStorage.getItem(USER_KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as SessionUser
     if (!parsed?.name) return null
@@ -23,11 +30,12 @@ export function getUser(): SessionUser | null {
 
 export function clearUser() {
   localStorage.removeItem(USER_KEY)
+  sessionStorage.removeItem(USER_KEY)
 }
 
 export function clearSession() {
   clearUser()
-  localStorage.removeItem('profemanager:token')
+  clearToken()
 }
 
 export function nameFromEmail(email: string): string {

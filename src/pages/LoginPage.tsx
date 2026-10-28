@@ -1,42 +1,39 @@
-import { type FormEvent, useState } from 'react'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ApiError, login } from '../lib/api'
-import { isValidEmail, translateApiMessage } from '../lib/errors'
-import { useAuth } from '../context/AuthContext'
+import { translateApiMessage } from '../lib/errors'
+import { loginSchema, type LoginValues } from '../lib/schemas'
+import { useAuth } from '../context/authStore'
+import PasswordInput from '../components/PasswordInput'
 
 export default function LoginPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { login: authLogin } = useAuth()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [remember, setRemember] = useState(true)
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '', remember: true },
+  })
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
+  async function onSubmit(values: LoginValues) {
     setError(null)
-
-    const trimmedEmail = email.trim()
-
-    if (!trimmedEmail || !password) {
-      setError('Preencha e-mail e senha.')
-      return
-    }
-
-    if (!isValidEmail(trimmedEmail)) {
-      setError('Informe um e-mail válido.')
-      return
-    }
-
-    setLoading(true)
     try {
-      const result = await login(trimmedEmail, password)
-      authLogin(result.access_token, { name: result.user.name, email: result.user.email })
-      if (!remember) {
-        // token stays; "remember" could gate sessionStorage vs localStorage later
-      }
+      const result = await login(values.email, values.password)
+      authLogin(
+        result.access_token,
+        { name: result.user.name, email: result.user.email },
+        values.remember,
+      )
+      toast.success(`Olá, ${result.user.name}!`)
       const redirectTo =
         (location.state as { from?: string } | null)?.from ?? '/boas-vindas'
       navigate(redirectTo, { replace: true })
@@ -48,14 +45,17 @@ export default function LoginPage() {
       } else {
         setError('Não foi possível entrar. Tente novamente.')
       }
-    } finally {
-      setLoading(false)
     }
   }
 
   return (
     <div className="login-card">
-      <form onSubmit={handleSubmit} noValidate>
+      <header className="login-header">
+        <h1>Bem-vindo de volta</h1>
+        <p className="login-sub">Entre com sua conta para acessar o painel do professor.</p>
+      </header>
+
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
         {error ? (
           <p className="form-error" role="alert">
             {error}
@@ -66,35 +66,30 @@ export default function LoginPage() {
           <label htmlFor="login-email">E-mail</label>
           <input
             id="login-email"
-            name="email"
             type="email"
             autoComplete="email"
             placeholder="voce@exemplo.com"
-            value={email}
-            onChange={(ev) => setEmail(ev.target.value)}
+            aria-invalid={errors.email ? true : undefined}
+            {...register('email')}
           />
+          {errors.email ? <p className="field-error">{errors.email.message}</p> : null}
         </div>
 
         <div className="form-field">
           <label htmlFor="login-password">Senha</label>
-          <input
+          <PasswordInput
             id="login-password"
-            name="password"
-            type="password"
             autoComplete="current-password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(ev) => setPassword(ev.target.value)}
+            placeholder="Digite sua senha"
+            aria-invalid={errors.password ? true : undefined}
+            {...register('password')}
           />
+          {errors.password ? <p className="field-error">{errors.password.message}</p> : null}
         </div>
 
         <div className="form-row">
           <label className="checkbox">
-            <input
-              type="checkbox"
-              checked={remember}
-              onChange={(ev) => setRemember(ev.target.checked)}
-            />
+            <input type="checkbox" {...register('remember')} />
             Lembrar de mim
           </label>
           <Link className="link-muted" to="/esqueci-senha">
@@ -102,8 +97,14 @@ export default function LoginPage() {
           </Link>
         </div>
 
-        <button type="submit" className="btn-primary" disabled={loading}>
-          {loading ? 'Entrando…' : 'Entrar'}
+        <button type="submit" className="btn-primary" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="btn-spinner" size={18} aria-hidden /> Entrando…
+            </>
+          ) : (
+            'Entrar'
+          )}
         </button>
       </form>
 

@@ -1,7 +1,7 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError, changePassword, fetchMe, updateProfile } from '../lib/api'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/authStore'
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('pt-BR', {

@@ -1,36 +1,37 @@
-import { type FormEvent, useState } from 'react'
+import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Loader2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ApiError, forgotPassword } from '../lib/api'
+import { forgotPasswordSchema, type ForgotPasswordValues } from '../lib/schemas'
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [devResetLink, setDevResetLink] = useState<string | null>(null)
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<ForgotPasswordValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: { email: '' },
+  })
 
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
+  async function onSubmit(values: ForgotPasswordValues) {
     setError(null)
     setMessage(null)
     setDevResetLink(null)
 
-    if (!email.trim()) {
-      setError('Informe seu e-mail.')
-      return
-    }
-
-    setLoading(true)
     try {
-      const result = await forgotPassword(email.trim())
+      const result = await forgotPassword(values.email)
       setMessage(result.message)
       if (result.reset_link) {
         setDevResetLink(result.reset_link)
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível enviar o pedido.')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -64,7 +65,7 @@ export default function ForgotPasswordPage() {
           </p>
         </>
       ) : (
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
           {error ? (
             <p className="form-error" role="alert">
               {error}
@@ -75,17 +76,23 @@ export default function ForgotPasswordPage() {
             <label htmlFor="forgot-email">E-mail</label>
             <input
               id="forgot-email"
-              name="email"
               type="email"
               autoComplete="email"
               placeholder="voce@exemplo.com"
-              value={email}
-              onChange={(ev) => setEmail(ev.target.value)}
+              aria-invalid={errors.email ? true : undefined}
+              {...register('email')}
             />
+            {errors.email ? <p className="field-error">{errors.email.message}</p> : null}
           </div>
 
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Enviando…' : 'Enviar link'}
+          <button type="submit" className="btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="btn-spinner" size={18} aria-hidden /> Enviando…
+              </>
+            ) : (
+              'Enviar link'
+            )}
           </button>
 
           <p className="login-footer">

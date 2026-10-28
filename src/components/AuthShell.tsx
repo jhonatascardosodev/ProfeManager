@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { logoProfmBrand } from '../assets'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/authStore'
 
 const AUTH_ROUTES = new Set(['/entrar', '/criar-conta', '/esqueci-senha', '/redefinir-senha'])
 
