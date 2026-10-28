@@ -1,24 +1,42 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import QueryState from '../components/QueryState'
+import { ApiError, type ApiClassroom } from '../lib/api'
 import {
-  ApiError,
-  type ApiClassroom,
-  createClassroom,
-  deleteClassroom,
-  listClassrooms,
-  updateClassroom,
-} from '../lib/api'
+  useClassroomsQuery,
+  useCreateClassroom,
+  useDeleteClassroom,
+  useUpdateClassroom,
+} from '../lib/queries'
 
 type Seat = { seat: number; name: string; tag: string }
+
+/** PRNG determinístico (mulberry32): mesma semente, mesma ordem — mantém o render puro. */
+function seededRandom(seed: number) {
+  let state = seed >>> 0
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0
+    let t = state
+    t = Math.imul(t ^ (t >>> 15), t | 1)
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
 
 export default function ClassroomMapPage() {
   const [subject, setSubject] = useState('Matemática')
   const [studentCount, setStudentCount] = useState(24)
   const [rows, setRows] = useState(4)
   const [mode, setMode] = useState<'separado' | 'juntos' | 'aleatorio'>('separado')
-  const [saved, setSaved] = useState<ApiClassroom[]>([])
+  const [shuffleSeed, setShuffleSeed] = useState(1)
   const [activeId, setActiveId] = useState<number | null>(null)
-  const [loading, setLoading] = useState(false)
+  const classroomsQuery = useClassroomsQuery()
+  const createMutation = useCreateClassroom()
+  const updateMutation = useUpdateClassroom()
+  const deleteMutation = useDeleteClassroom()
+  const saved = classroomsQuery.data ?? []
+  const loading =
+    createMutation.isPending || updateMutation.isPending || deleteMutation.isPending
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -27,9 +45,10 @@ export default function ClassroomMapPage() {
     const students = Array.from({ length: total }, (_, index) => `Aluno ${index + 1}`)
 
     if (mode === 'aleatorio') {
+      const random = seededRandom(shuffleSeed)
       const shuffled = [...students]
       for (let i = shuffled.length - 1; i > 0; i -= 1) {
-        const j = Math.floor(Math.random() * (i + 1))
+        const j = Math.floor(random() * (i + 1))
         ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
       }
       return shuffled.map((name, index) => ({
@@ -52,15 +71,9 @@ export default function ClassroomMapPage() {
       name,
       tag: 'Separado',
     }))
-  }, [studentCount, mode])
+  }, [studentCount, mode, shuffleSeed])
 
   const seatsPerRow = Math.max(1, Math.ceil(seats.length / Math.max(1, rows)))
-
-  useEffect(() => {
-    listClassrooms()
-      .then(setSaved)
-      .catch(() => setSaved([]))
-  }, [])
 
   function loadClassroom(classroom: ApiClassroom) {
     setSubject(classroom.subject)
@@ -73,7 +86,6 @@ export default function ClassroomMapPage() {
   }
 
   async function handleSave() {
-    setLoading(true)
     setError(null)
     setMessage(null)
     const payload = {
@@ -86,35 +98,27 @@ export default function ClassroomMapPage() {
 
     try {
       if (activeId !== null) {
-        const updated = await updateClassroom(activeId, payload)
-        setSaved((prev) => prev.map((c) => (c.id === updated.id ? updated : c)))
+        await updateMutation.mutateAsync({ id: activeId, payload })
         setMessage('Mapa atualizado com sucesso.')
       } else {
-        const created = await createClassroom(payload)
-        setSaved((prev) => [created, ...prev])
+        const created = await createMutation.mutateAsync(payload)
         setActiveId(created.id)
         setMessage('Mapa salvo com sucesso.')
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível salvar o mapa.')
-    } finally {
-      setLoading(false)
     }
   }
 
   async function handleDelete() {
     if (activeId === null) return
-    setLoading(true)
     setError(null)
     try {
-      await deleteClassroom(activeId)
-      setSaved((prev) => prev.filter((c) => c.id !== activeId))
+      await deleteMutation.mutateAsync(activeId)
       setActiveId(null)
       setMessage('Mapa removido.')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível remover o mapa.')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -145,6 +149,13 @@ export default function ClassroomMapPage() {
           {error}
         </p>
       ) : null}
+
+      <QueryState
+        isLoading={classroomsQuery.isLoading}
+        isError={classroomsQuery.isError}
+        onRetry={() => classroomsQuery.refetch()}
+        errorMessage="Não foi possível carregar os mapas salvos."
+      />
 
       {saved.length > 0 ? (
         <section className="welcome-section">
@@ -191,7 +202,10 @@ export default function ClassroomMapPage() {
             min={1}
             max={50}
             value={studentCount}
-            onChange={(event) => setStudentCount(Number(event.target.value))}
+            onChange={(event) => {
+              setStudentCount(Number(event.target.value))
+              setShuffleSeed(Math.floor(Math.random() * 2 ** 32))
+            }}
           />
         </div>
 
@@ -201,7 +215,10 @@ export default function ClassroomMapPage() {
             id="mode"
             className="select-field"
             value={mode}
-            onChange={(event) => setMode(event.target.value as 'separado' | 'juntos' | 'aleatorio')}
+            onChange={(event) => {
+              setMode(event.target.value as 'separado' | 'juntos' | 'aleatorio')
+              setShuffleSeed(Math.floor(Math.random() * 2 ** 32))
+            }}
           >
             <option value="separado">Separado</option>
             <option value="juntos">Juntos (em duplas)</option>

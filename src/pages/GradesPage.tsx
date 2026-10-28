@@ -1,7 +1,15 @@
-import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { type FormEvent, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ApiError, createGrade, deleteGrade, listGrades, updateGrade } from '../lib/api'
+import GradesChart from '../components/GradesChart'
+import QueryState from '../components/QueryState'
+import { ApiError } from '../lib/api'
 import { gradeFromApi, gradeToApi } from '../lib/mappers'
+import {
+  useCreateGrade,
+  useDeleteGrade,
+  useGradesQuery,
+  useUpdateGrade,
+} from '../lib/queries'
 import {
   calculateAverage,
   EMPTY_STUDENT_GRADE,
@@ -19,26 +27,20 @@ function parseScore(value: string): number | null {
 
 export default function GradesPage() {
   const [form, setForm] = useState(EMPTY_STUDENT_GRADE)
-  const [entries, setEntries] = useState<StudentGrade[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
   const [filterSubject, setFilterSubject] = useState('')
   const [filterClass, setFilterClass] = useState('')
 
-  async function loadEntries(subject?: string) {
-    try {
-      const items = await listGrades(subject || undefined)
-      setEntries(items.map(gradeFromApi))
-    } catch {
-      setEntries([])
-    }
-  }
+  const gradesQuery = useGradesQuery()
+  const createMutation = useCreateGrade()
+  const updateMutation = useUpdateGrade()
+  const deleteMutation = useDeleteGrade()
+  const loading =
+    createMutation.isPending || updateMutation.isPending || deleteMutation.isPending
 
-  useEffect(() => {
-    loadEntries()
-  }, [])
+  const entries = useMemo(() => (gradesQuery.data ?? []).map(gradeFromApi), [gradesQuery.data])
 
   const filtered = useMemo(() => {
     return entries.filter((entry) => {
@@ -88,6 +90,15 @@ export default function GradesPage() {
     }
   }, [filtered])
 
+  const chartItems = useMemo(
+    () =>
+      filtered.flatMap((entry) => {
+        const average = calculateAverage(entry)
+        return average === null ? [] : [{ name: entry.studentName, average }]
+      }),
+    [filtered],
+  )
+
   function updateField<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
@@ -107,25 +118,18 @@ export default function GradesPage() {
       return
     }
 
-    setLoading(true)
     try {
       const payload = gradeToApi(form)
       if (editingId) {
-        const updated = await updateGrade(Number(editingId), payload)
-        const mapped = gradeFromApi(updated)
-        setEntries((prev) => prev.map((item) => (item.id === editingId ? mapped : item)))
+        await updateMutation.mutateAsync({ id: Number(editingId), payload })
         setMessage('Notas atualizadas.')
       } else {
-        const created = await createGrade(payload)
-        const mapped = gradeFromApi(created)
-        setEntries((prev) => [mapped, ...prev])
+        await createMutation.mutateAsync(payload)
         setMessage('Notas lançadas com sucesso.')
       }
       resetForm()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível salvar as notas.')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -148,17 +152,13 @@ export default function GradesPage() {
   }
 
   async function handleDelete(id: string) {
-    setLoading(true)
     setError(null)
     try {
-      await deleteGrade(Number(id))
-      setEntries((prev) => prev.filter((item) => item.id !== id))
+      await deleteMutation.mutateAsync(Number(id))
       if (editingId === id) resetForm()
       setMessage('Registro removido.')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível remover o registro.')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -322,7 +322,16 @@ export default function GradesPage() {
           </div>
         </div>
 
-        {filtered.length === 0 ? (
+        <GradesChart items={chartItems} />
+
+        {gradesQuery.isLoading || gradesQuery.isError ? (
+          <QueryState
+            isLoading={gradesQuery.isLoading}
+            isError={gradesQuery.isError}
+            onRetry={() => gradesQuery.refetch()}
+            errorMessage="Não foi possível carregar as notas."
+          />
+        ) : filtered.length === 0 ? (
           <p className="lesson-plan-empty">Nenhuma nota lançada ainda.</p>
         ) : (
           <div className="grades-table-wrap">

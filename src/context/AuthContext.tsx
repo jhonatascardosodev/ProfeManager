@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from 'react'
 import { ApiError, fetchMe, getToken, setToken } from '../lib/api'
+import { queryClient } from '../lib/queryClient'
 import { clearSession, setUser, type SessionUser } from '../lib/session'
 import { AuthContext, type AuthStatus } from './authStore'
 
@@ -16,6 +17,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     clearSession()
+    queryClient.clear()
     setUserState(null)
     setStatus('unauthenticated')
   }, [])

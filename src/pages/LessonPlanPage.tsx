@@ -1,22 +1,30 @@
-import { type FormEvent, useEffect, useState } from 'react'
+import { type FormEvent, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ApiError, createLessonPlan, deleteLessonPlan, listLessonPlans, updateLessonPlan } from '../lib/api'
+import QueryState from '../components/QueryState'
+import { ApiError } from '../lib/api'
 import { lessonPlanFromApi, lessonPlanToApi } from '../lib/mappers'
+import {
+  useCreateLessonPlan,
+  useDeleteLessonPlan,
+  useLessonPlansQuery,
+  useUpdateLessonPlan,
+} from '../lib/queries'
 import { EMPTY_LESSON_PLAN, type LessonPlan } from '../types/lessonPlan'
 
 export default function LessonPlanPage() {
   const [form, setForm] = useState(EMPTY_LESSON_PLAN)
-  const [plans, setPlans] = useState<LessonPlan[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
-    listLessonPlans()
-      .then((items) => setPlans(items.map(lessonPlanFromApi)))
-      .catch(() => setPlans([]))
-  }, [])
+  const plansQuery = useLessonPlansQuery()
+  const createMutation = useCreateLessonPlan()
+  const updateMutation = useUpdateLessonPlan()
+  const deleteMutation = useDeleteLessonPlan()
+  const loading =
+    createMutation.isPending || updateMutation.isPending || deleteMutation.isPending
+
+  const plans = useMemo(() => (plansQuery.data ?? []).map(lessonPlanFromApi), [plansQuery.data])
 
   function updateField<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -37,25 +45,18 @@ export default function LessonPlanPage() {
       return
     }
 
-    setLoading(true)
     try {
       const payload = lessonPlanToApi(form)
       if (editingId) {
-        const updated = await updateLessonPlan(Number(editingId), payload)
-        const mapped = lessonPlanFromApi(updated)
-        setPlans((prev) => prev.map((p) => (p.id === editingId ? mapped : p)))
+        await updateMutation.mutateAsync({ id: Number(editingId), payload })
         setMessage('Planejamento atualizado.')
       } else {
-        const created = await createLessonPlan(payload)
-        const mapped = lessonPlanFromApi(created)
-        setPlans((prev) => [mapped, ...prev])
+        await createMutation.mutateAsync(payload)
         setMessage('Planejamento salvo com sucesso.')
       }
       resetForm()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível salvar o planejamento.')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -80,17 +81,13 @@ export default function LessonPlanPage() {
   }
 
   async function handleDelete(id: string) {
-    setLoading(true)
     setError(null)
     try {
-      await deleteLessonPlan(Number(id))
-      setPlans((prev) => prev.filter((p) => p.id !== id))
+      await deleteMutation.mutateAsync(Number(id))
       if (editingId === id) resetForm()
       setMessage('Planejamento removido.')
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Não foi possível remover o planejamento.')
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -265,7 +262,14 @@ export default function LessonPlanPage() {
 
       <section className="welcome-section lesson-plan-list">
         <h2>Planejamentos salvos ({plans.length})</h2>
-        {plans.length === 0 ? (
+        {plansQuery.isLoading || plansQuery.isError ? (
+          <QueryState
+            isLoading={plansQuery.isLoading}
+            isError={plansQuery.isError}
+            onRetry={() => plansQuery.refetch()}
+            errorMessage="Não foi possível carregar os planejamentos."
+          />
+        ) : plans.length === 0 ? (
           <p className="lesson-plan-empty">Nenhum planejamento salvo ainda.</p>
         ) : (
           <ul className="lesson-plan-items">

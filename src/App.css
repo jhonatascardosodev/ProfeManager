@@ -496,6 +496,25 @@ a.link-muted {
   margin-top: 1.5rem;
 }
 
+.query-state {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.query-state--error {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+}
+
 .lesson-plan-empty {
   margin: 0;
   font-size: 0.9rem;
@@ -587,6 +606,22 @@ a.link-muted {
 
 .grades-stat--danger strong {
   color: #b91c1c;
+}
+
+.grades-chart {
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 0.85rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #faf8ff;
+}
+
+.grades-chart figcaption {
+  margin: 0 0 0.5rem 0.25rem;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text-heading);
 }
 
 .grades-scores-grid {

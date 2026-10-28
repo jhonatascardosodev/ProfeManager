@@ -41,3 +41,22 @@ export const resetPasswordSchema = z
 
 export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>
+
+export const profileSchema = z.object({
+  name: z.string().trim().min(1, 'Informe seu nome.').max(120, 'Nome muito longo.'),
+  email,
+})
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Informe a senha atual.'),
+    newPassword: z.string().min(6, 'A nova senha deve ter pelo menos 6 caracteres.').max(128),
+    confirmPassword: z.string().min(1, 'Repita a nova senha.'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'As senhas não coincidem.',
+  })
+
+export type ProfileValues = z.infer<typeof profileSchema>
+export type ChangePasswordValues = z.infer<typeof changePasswordSchema>
