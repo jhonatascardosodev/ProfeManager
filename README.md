@@ -38,7 +38,7 @@ O **PROFM (ProfeManager)** centraliza tarefas do dia a dia do professor em uma i
   <tr>
     <td>🔐 Autenticação</td>
     <td><code>/entrar</code> · <code>/criar-conta</code></td>
-    <td>Login e cadastro com boas-vindas personalizadas</td>
+    <td>Login, cadastro e recuperação de senha, com validação por campo e opção «Lembrar de mim»</td>
   </tr>
   <tr>
     <td>🏠 Painel</td>
@@ -144,6 +144,8 @@ O Vite encaminha `/api` para o backend — não precisa configurar CORS manualme
 2. Crie usuário (senha mín. 6 caracteres)
 3. Use o painel em `/boas-vindas`
 
+Também é possível entrar em `/entrar`. Marcando **Lembrar de mim**, a sessão continua depois de fechar o navegador; desmarcado, ela vale só até fechar a aba.
+
 Rotas internas exigem login (token JWT validado com `/api/auth/me`).
 
 ---
@@ -182,8 +184,9 @@ projetos 2026/
 │
 ├── src/
 │   ├── assets/logos/       # Identidade visual PROFM
-│   ├── components/         # Layout e shell (AuthShell)
-│   ├── lib/                # Sessão do usuário
+│   ├── components/         # AuthShell, rotas protegidas, PasswordInput
+│   ├── context/            # AuthContext (provider) e authStore (contexto + useAuth)
+│   ├── lib/                # API, sessão, schemas de validação (zod), erros
 │   ├── pages/              # Telas por rota
 │   ├── types/              # Tipos (notas, planejamento)
 │   ├── App.tsx             # Rotas
@@ -206,6 +209,7 @@ projetos 2026/
 | `/esqueci-senha` | Solicitar link de redefinição |
 | `/redefinir-senha?token=...` | Definir nova senha |
 | `/boas-vindas` | Painel de serviços |
+| `/perfil` | Perfil do usuário |
 | `/mapa-sala` | Mapa de sala |
 | `/planejamento-aula` | Planejamento de aula |
 | `/notas-desempenho` | Notas e desempenho |
@@ -216,8 +220,8 @@ projetos 2026/
 
 | Onde | O que |
 |------|--------|
-| `localStorage` → `profemanager:token` | JWT de autenticação |
-| `localStorage` → `profemanager:user` | Nome e e-mail (cache da sessão) |
+| `localStorage` / `sessionStorage` → `profemanager:token` | JWT de autenticação (`localStorage` com «Lembrar de mim», `sessionStorage` sem) |
+| `localStorage` / `sessionStorage` → `profemanager:user` | Nome e e-mail (cache da sessão, mesmo storage do token) |
 | `backend/database.db` | Turmas, notas, planejamentos por usuário |
 
 ---
@@ -229,6 +233,8 @@ projetos 2026/
 | UI | React 19 + TypeScript |
 | Build | Vite 8 |
 | Rotas | React Router 7 |
+| Formulários | React Hook Form + Zod |
+| Ícones e avisos | Lucide React + Sonner (toasts) |
 | Estilo | CSS customizado (tema roxo) |
 | API | FastAPI + SQLModel + SQLite + JWT |
 
